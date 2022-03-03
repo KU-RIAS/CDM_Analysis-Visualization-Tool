@@ -1,0 +1,58 @@
+{% load staticfiles %}
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{% static 'www/images/favicon.ico' %}">
+
+    <title>CDM</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'www/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{% static 'www/css/dashboard.css' %}" rel="stylesheet">
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/d3/4.2.2/d3.min.js'></script>
+    <script src="{% static 'www/js/d3-adjacency-matrix-layout.js' %}"/>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.10.3/babel.min.js'></script><script src="https://d3js.org/d3.v4.js"></script>
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script> 
+<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+
+
+</head>
+<style>
+  svg {
+    border: 0px solid gray;
+  }
+  g.am-axis text {
+    font-size: 8px;
+  }
+
+  .domain {
+    fill: none;
+  }
+
+  .tick > line{
+    stroke: black;
+    stroke-width: 1px;
+    stroke-opacity: 0.25;
+  }
+  .table{
+    text-align:center;
+  }
+</style>
+  <body>
+
+    <h5>... Empty Page for Test ... </h5>
+
+    <p align="center">
+    <iframe src="index" style="width:80%; height:1200px">
+    </iframe>
+    </p>      
+
+  </body>
+</html>

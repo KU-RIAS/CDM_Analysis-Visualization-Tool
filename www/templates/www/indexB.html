@@ -1,0 +1,522 @@
+{% load staticfiles %}
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{% static 'www/images/favicon.ico' %}">
+
+    <title>CDM</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'www/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{% static 'www/css/dashboard.css' %}" rel="stylesheet">
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/d3/4.2.2/d3.min.js'></script>
+    <script src="{% static 'www/js/d3-adjacency-matrix-layout.js' %}"/>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.10.3/babel.min.js'></script>
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <!-- apexcharts for chart3 -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script>window.jQuery || document.write('<script src="{% static 'www/js/jquery-slim.min.js' %}"><\/script>')</script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
+
+  </head>
+  <style>
+    svg {
+      border: 0px solid gray;
+    }
+    g.am-axis text {
+      font-size: 8px;
+    }
+
+    .domain {
+      fill: none;
+    }
+
+    .tick > line{
+      stroke: black;
+      stroke-width: 1px;
+      stroke-opacity: 0.25;
+    }
+    .table{
+      text-align:center;
+    }
+  </style>
+  <body>
+    <nav class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0">
+      <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">CDM</a>
+      {% comment %} <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search"> {% endcomment %}
+      {% comment %} <ul class="navbar-nav px-3">
+        <li class="nav-item text-nowrap">
+          <a class="nav-link" href="#">Sign out</a>
+        </li>
+      </ul> {% endcomment %}
+    </nav>
+    <div class="container-fluid">
+      <div class="row">
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+          <div class="sidebar-sticky">
+            <ul class="nav flex-column">
+              <li class="nav-item">
+                <a class="nav-link" href='/indexA'>
+                  <span data-feather="users"></span>
+                  Hostpital A
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link active" href=''>
+                  <span data-feather="layers"></span>
+                  Hostpital B
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href='/indexC'>
+                  <span data-feather="bar-chart-2"></span>
+                  Hostpital C
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href='/indexD'>
+                  <span data-feather="bar-chart-2"></span>
+                  Infection Risk Analysis
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href='/indexE'>
+                  <span data-feather="bar-chart-2"></span>
+                  Multicenter Integrated Analysis
+                </a>
+              </li>              
+            </ul>
+          </div>
+        </nav>
+
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
+          <h5>선택병원: Hostpital B </h5>
+          <h5>선택연도: {{ selected_year }}</h5>
+          <h5>임상검체: {{ selected_organism }}</h5>
+          <!-- <br/><p style="text-align:right">2018-12-20 ~ 2020-12-31</p> -->
+          <br/><p style="text-align:right">{{ selected_year }}년 기준</p>
+
+     <!--      DropBox -->
+     <form action="/get_choiceB">
+      <select name="year">     <!-- onchange="if(this.value) location.href=(this.value);"> -->
+        <option value="연도 드롭박스"> --연도 선택-- </option>
+        <option value="2002"> 2002년 </option>
+        <option value="2003"> 2003년 </option>
+        <option value="2004"> 2004년 </option>
+        <option value="2005"> 2005년 </option>
+        <option value="2006"> 2006년 </option>
+        <option value="2007"> 2007년 </option>
+        <option value="2008"> 2008년 </option>
+        <option value="2009"> 2009년 </option>
+        <option value="2010"> 2010년 </option>
+        <option value="2011"> 2011년 </option>
+        <option value="2012"> 2012년 </option>
+        <option value="2013"> 2013년 </option>
+        <option value="2014"> 2014년 </option>
+        <option value="2015"> 2015년 </option>
+        <option value="2016"> 2016년 </option>
+        <option value="2017"> 2017년 </option>
+        <option value="2018"> 2018년 </option>
+      </select>
+
+        <select name="organism" onchange="this.form.submit()">     <!-- onchange="if(this.value) location.href=(this.value);"> -->
+        <option value="organism 드롭박스"> --Organism 선택-- </option>
+        <option value="staphylococcus aureus"> Staphylococcus aureus </option>
+        <option value="enterococcus faecium / enterococcus faecalis"> Enterococcus faecium / Enterococcus faecalis </option>
+        <option value="acinetobacter baumannii"> Acinetobacter baumannii </option>
+        <option value="pseudomonas aeruginosa"> Pseudomonas aeruginosa </option>
+        <option value="escherichia coli"> Escherichia coli </option>
+        <option value="klebsiella pneumoniae"> Klebsiella pneumoniae </option>
+      </select>
+     </form>
+     <!--      DropBox -->
+
+
+     <!--      second section -->
+     <table class="table table-bordered table-striped">
+              <thead>
+                <tr>
+                  <th scope="col">월별</th>
+                  <th scope="col">1월</th>
+                  <th scope="col">2월</th>
+                  <th scope="col">3월</th>
+                  <th scope="col">4월</th>
+                  <th scope="col">5월</th>
+                  <th scope="col">6월</th>
+                  <th scope="col">7월</th>
+                  <th scope="col">8월</th>
+                  <th scope="col">9월</th>
+                  <th scope="col">10월</th>
+                  <th scope="col">11월</th>
+                  <th scope="col">12월</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">총 분리 수</th>
+                  {% for values in total %}
+                    <td>{{ values }}</td>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  <th scope="row">총 분리 발생 환자 수</th>
+                  {% for values in total_unique %}
+                    <td>{{ values }}</td>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  <th scope="row">총 감염 발생 신환 수</th>
+                  {% for values in anti %}
+                    <td>{{ values }}</td>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  <th scope="row">총 감염 발생률(%)</th>
+                  {% for values in rate %}
+                    <td>{{ values }}</td>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  <th scope="row">원내 발생 신환 수</th>
+                  {% for values in new_patient %}
+                    <td>{{ values }}</td>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  <th scope="row">입원 환자 수</th> hospitalization
+                  {% for values in hospitalization %}
+                    <td>{{ values }}</td>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  <th scope="row">1000pt days 당 발생률</th>
+                  {% for values in new_patient_rate %}
+                    <td>{{ values }}</td>
+                  {% endfor %}
+                </tr>
+              </tbody>
+            </table>
+              <br/>
+    <!--       <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+             -->
+
+
+         <!--  </div> -->
+
+         <h5>{{ selected_organism }} 총 분리 수 및 분리 환자 수</h5>
+         <!--   CHART GRAPH -->
+          <canvas class="my-4" id="chart0" width="600" height="200"></canvas>
+
+          <h5>{{ selected_organism }} 감염 발생 수 및 발생률</h5>
+         <!--   CHART GRAPH -->
+          <canvas class="my-4" id="chart1" width="600" height="200"></canvas>
+
+          <h5>{{ selected_organism }} 원내 감염 신환 발생률 </h5>
+          <!--   CHART GRAPH -->
+          <canvas class="my-4" id="chart2" width="600" height="200"></canvas>
+
+          <h5>{{ selected_organism }} 발생 병동 위치 </h5>
+          <!--   CHART GRAPH -->
+          <div class="my-4" id="chart3"></div>
+
+        </main>
+      </div>
+    </div>
+    <!-- Graphs -->
+    <script type="text/javascript">
+
+    $.ajax({
+         type:'POST',
+//          url:'get_resistent',
+         dataType:'json',
+         success:function(result){
+           console.log("work?");
+
+
+         }
+     });
+
+     var canvas0 = document.getElementById('chart0');
+     var total = JSON.parse("{{total}}");
+     var total_unique = JSON.parse("{{total_unique}}");
+
+     var canvas1 = document.getElementById('chart1');
+     var anti = JSON.parse("{{anti}}");
+     var rate = JSON.parse("{{rate}}");
+
+     var canvas2 = document.getElementById('chart2');
+     var new_patient = JSON.parse("{{new_patient}}");
+     var new_patient_rate = JSON.parse("{{new_patient_rate}}");
+
+
+      // code for chart3(heatmap) input data
+      function chart3_input(count, _location_table, _time_by_location_count, month) {
+        var i = 0;
+        var series = [];
+        while (i < count) {
+          var x = _location_table[i];
+          var y = _time_by_location_count[month*33 + i];
+
+          series.push({
+            x: x,
+            y: y
+          });
+          i++;
+        }
+        return series;
+      }
+
+      new Chart(canvas0, {
+
+        type: 'bar',
+        data: {
+          labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'], // date
+          datasets: [{
+            label: '총 분리수',
+            yAxisID: 'A',
+            backgroundColor:  'rgba(75, 192, 192, 0.24)',
+            data: total  //count
+          },
+          {
+            label: '총 분리 발생 환자 수',
+            yAxisID: 'A',
+            color: '#9CBABA',
+            backgroundColor: 'rgba(54, 162, 235, 0.4)',
+            data: total_unique
+          }, 
+          ]
+        },
+        options: {
+          scales: {
+            yAxes: [{
+              id: 'A',
+              type: 'linear',
+              position: 'left',
+              scaleLabel: {
+                display: true,
+                labelString: '분리수'
+              },
+
+            },]
+          }
+        }
+        }); //chart0
+
+
+      new Chart(canvas1, {
+
+        type: 'bar',
+        data: {
+          labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'], // date
+          datasets: [{
+            label: '총 분리수',
+            yAxisID: 'A',
+            backgroundColor:  'rgba(75, 192, 192, 0.24)',
+            data: total  //count
+          },
+          {
+            label: '총 감염 발생 신환 수',
+            yAxisID: 'A',
+            color: '#9CBABA',
+            backgroundColor: 'rgba(54, 162, 235, 0.4)',
+            data: anti
+          }, {
+            type: "line",
+            label: '총 감염 발생률(%)',
+            yAxisID: 'B',
+            borderColor: 'gray',
+            backgroundColor: 'transparent',
+            data: rate
+          }]
+        },
+        options: {
+          scales: {
+            yAxes: [{
+              id: 'A',
+              type: 'linear',
+              position: 'left',
+              scaleLabel: {
+                display: true,
+                labelString: '분리수'
+              },
+
+            }, {
+              id: 'B',
+              type: 'linear',
+              position: 'right',
+              scaleLabel: {
+                display: true,
+                labelString: '총 감염 발생률(%)'
+              },
+              labelString: '총 감염 발생률(%)',
+              ticks: {
+                max: 100,
+                min: 0
+              }
+            }]
+          }
+        }
+        }); //chart1
+
+        new Chart(canvas2, {
+
+      type: 'bar',
+      data: {
+        labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'], // date
+        datasets: [{
+          label: '원내 발생 신환 수',
+          yAxisID: 'A',
+          backgroundColor:  'rgba(75, 192, 192, 0.24)',
+          data: new_patient
+        },
+        {
+          type: "line",
+          label: '1000재원환자 당 발생률(%)',
+          yAxisID: 'B',
+          borderColor: 'gray',
+          backgroundColor: 'transparent',
+          data: new_patient_rate
+        }]
+      },
+      options: {
+        scales: {
+          yAxes: [{
+            id: 'A',
+            type: 'linear',
+            position: 'left',
+            scaleLabel: {
+              display: true,
+              labelString: '원내 발생 신환 수'
+            },
+
+          }, {
+            id: 'B',
+            type: 'linear',
+            position: 'right',
+            scaleLabel: {
+              display: true,
+              labelString: '내성균 분리율(%)'
+            },
+            labelString: '1000pt days 당 발생률',
+            ticks: {
+              max: 100,
+              min: 0
+            }
+          }]
+        }
+      }
+      }); //chart2
+
+
+//chart3
+var location_table = ["52W", "53W", "54W", "55W", "57W", "61W", "62W", "63W", "64W", "65W", "66W", "71W", "72W", "73W", "74W", "75W", "76W", "78W8W", "81W", "82W", "83W", "84W", "85W", "86W", "88W", "CCU", "CIC", "DER", "EICU", "LAF", "MIC", "OBS", "SIC"];
+var time_by_location_count = JSON.parse("{{location_count_values}}");
+console.log(time_by_location_count)
+var options3 = {
+  chart: {
+    height: 550,
+    type: 'heatmap',
+  },
+  series: [
+  {
+    name: '12월',
+    data: chart3_input(33, location_table, time_by_location_count, 0),
+  },
+  {
+    name: '11월',
+    data: chart3_input(33, location_table, time_by_location_count, 1)
+  },
+  {
+    name: '10월',
+    data: chart3_input(33, location_table, time_by_location_count, 2)
+  },
+  {
+    name: '9월',
+    data: chart3_input(33, location_table, time_by_location_count, 3)
+  },
+  {
+    name: '8월',
+    data: chart3_input(33, location_table, time_by_location_count, 4)
+  },
+  {
+    name: '7월',
+    data: chart3_input(33, location_table, time_by_location_count, 5)
+  },
+  {
+    name: '6월',
+    data: chart3_input(33, location_table, time_by_location_count, 6)
+  },
+  {
+    name: '5월',
+    data: chart3_input(33, location_table, time_by_location_count, 7)
+  },
+  {
+    name: '4월',
+    data: chart3_input(33, location_table, time_by_location_count, 8)
+  },
+  {
+    name: '3월',
+    data: chart3_input(33, location_table, time_by_location_count, 9)
+  },
+  {
+    name: '2월',
+    data: chart3_input(33, location_table, time_by_location_count, 10)
+  },
+  {
+    name: '1월',
+    data: chart3_input(33, location_table, time_by_location_count, 11)
+  }
+  ],
+  plotOptions: {
+    heatmap: {
+      shadeIntensity: 0.5,
+      radius: 0,
+      useFillColorAsStroke: false,
+      colorScale: {
+        ranges: [{
+            from: 0,
+            to: 0,
+            name: '0명',
+            color: '#00A100'
+          },
+          {
+            from: 1,
+            to: 5,
+            name: '1~5명',
+            color: '#128FD9'
+          },
+          {
+            from: 6,
+            to: 45,
+            name: '>5명',
+            color: '#FFB200'
+          },
+        ]
+      }
+    }
+  },
+  dataLabels: {
+    enabled: false
+  },
+  colors: ["#008FFB"],
+  // title: {
+  //   text: 'HeatMap Chart (Single color)'
+  // },
+};
+var chart3 = new ApexCharts(document.querySelector("#chart3"), options3);
+chart3.render();
+//chart3
+    </script>
+  </body>
+</html>

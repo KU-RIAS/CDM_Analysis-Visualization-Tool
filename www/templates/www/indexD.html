@@ -1,0 +1,1452 @@
+{% load staticfiles %}
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{% static 'www/images/favicon.ico' %}">
+
+    <title>CDM</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'www/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{% static 'www/css/dashboard.css' %}" rel="stylesheet">
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/d3/4.2.2/d3.min.js'></script>
+    <script src="{% static 'www/js/d3-adjacency-matrix-layout.js' %}"/>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.10.3/babel.min.js'></script>
+    <script src="https://d3js.org/d3.v4.js"></script>
+    <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <!-- apexcharts for chart3 -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script>window.jQuery || document.write('<script src="{% static 'www/js/jquery-slim.min.js' %}"><\/script>')</script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.1/Chart.min.js"></script>
+    <!-- apexcharts for chart.js -->
+    <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+
+
+  </head>
+  <style>
+    svg {
+      border: 0px solid gray;
+    }
+    g.am-axis text {
+      font-size: 8px;
+    }
+
+    .domain {
+      fill: none;
+    }
+
+    .tick > line{
+      stroke: black;
+      stroke-width: 1px;
+      stroke-opacity: 0.25;
+    }
+    .table{
+      text-align:center;
+    }
+  </style>
+  <body>
+    <nav class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0">
+      <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">CDM</a>
+      {% comment %} <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search"> {% endcomment %}
+      {% comment %} <ul class="navbar-nav px-3">
+        <li class="nav-item text-nowrap">
+          <a class="nav-link" href="#">Sign out</a>
+        </li>
+      </ul> {% endcomment %}
+    </nav>
+    <div class="container-fluid">
+      <div class="row">
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+          <div class="sidebar-sticky">
+            <ul class="nav flex-column">
+              <li class="nav-item">
+                <a class="nav-link" href='/indexA'>
+                  <span data-feather="users"></span>
+                  Hostpital A
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href='/indexB'>
+                  <span data-feather="layers"></span>
+                  Hostpital B
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href='/indexC'>
+                  <span data-feather="bar-chart-2"></span>
+                  Hostpital C
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link active" href=''>
+                  <span data-feather="bar-chart-2"></span>
+                  Infection Risk Analysis
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href='/indexE'>
+                  <span data-feather="bar-chart-2"></span>
+                  Multicenter Integrated Analysis
+                </a>
+              </li>              
+            </ul>
+          </div>
+        </nav>
+
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
+          <h1>임상검체에 따른 원내 감염 위험도 분석 </h1>
+          <!-- <br/><p style="text-align:right">2018-12-20 ~ 2020-12-31</p> -->
+
+     <!--      DropBox -->
+     <form action=''>
+      <select name="run_opt" onchange="this.form.submit()">     <!-- onchange="if(this.value) location.href=(this.value);"> -->
+        <option value="위험도 분석 모델 의사 열정"> ==위험도 분석 모델 실행 동작 선택== </option>
+        <option value="train"> Train Model </option>
+        <option value="test" selected> Model Inference </option>
+      </select>
+     </form>
+     <!--      DropBox -->
+     <br/><p style="text-align:right"> 2019년 기준</p>
+
+
+
+
+     <h3>staphylococcus aureus</h3>
+     <p style="text-align:right"> R-squared: {{ r2_score0 }} | Mean Absolute Error: {{ mae_score0 }}</p>
+     <!--   CHART GRAPH -->
+      <canvas class="my-4" id="chart0" width="600" height="200"></canvas>
+
+      <h5>&nbsp;&nbsp;&nbsp;Seasonal Decomposition Analysis</h5>
+      <!--  Subplot Charts -->
+      <div id="chartContainer01" style="width: 48%; height: 300px;display: inline-block;"></div> 
+      <div id="chartContainer02" style="width: 48%; height: 300px;display: inline-block;"></div><br/>
+      <div id="chartContainer03" style="width: 48%; height: 300px;display: inline-block;"></div> 
+      <div id="chartContainer04" style="width: 48%; height: 300px;display: inline-block;"></div><br/><br/><br/><br/><br/>
+      <script type="text/javascript">
+        function chart_input(label, data) {
+          var i = 0;
+          var series = [];
+          while (i < data.length) { 
+            series.push(
+            { x: label[i], y: data[i]}
+            );
+            i++;
+          }
+          return series;
+        }
+        var xlabels_decomp = [
+        new Date(2010,01), new Date(2010,02), new Date(2010,03), new Date(2010,04), new Date(2010,05), new Date(2010,06), new Date(2010,07), new Date(2010,08), new Date(2010,09), new Date(2010,10), new Date(2010,11), new Date(2010,12),
+        new Date(2011,01), new Date(2011,02), new Date(2011,03), new Date(2011,04), new Date(2011,05), new Date(2011,06), new Date(2011,07), new Date(2011,08), new Date(2011,09), new Date(2011,10), new Date(2011,11), new Date(2011,12),
+        new Date(2012,01), new Date(2012,02), new Date(2012,03), new Date(2012,04), new Date(2012,05), new Date(2012,06), new Date(2012,07), new Date(2012,08), new Date(2012,09), new Date(2012,10), new Date(2012,11), new Date(2012,12),
+        new Date(2013,01), new Date(2013,02), new Date(2013,03), new Date(2013,04), new Date(2013,05), new Date(2013,06), new Date(2013,07), new Date(2013,08), new Date(2013,09), new Date(2013,10), new Date(2013,11), new Date(2013,12),
+        new Date(2014,01), new Date(2014,02), new Date(2014,03), new Date(2014,04), new Date(2014,05), new Date(2014,06), new Date(2014,07), new Date(2014,08), new Date(2014,09), new Date(2014,10), new Date(2014,11), new Date(2014,12),
+        new Date(2015,01), new Date(2015,02), new Date(2015,03), new Date(2015,04), new Date(2015,05), new Date(2015,06), new Date(2015,07), new Date(2015,08), new Date(2015,09), new Date(2015,10), new Date(2015,11), new Date(2015,12),
+        new Date(2016,01), new Date(2016,02), new Date(2016,03), new Date(2016,04), new Date(2016,05), new Date(2016,06), new Date(2016,07), new Date(2016,08), new Date(2016,09), new Date(2016,10), new Date(2016,11), new Date(2016,12),
+        new Date(2017,01), new Date(2017,02), new Date(2017,03), new Date(2017,04), new Date(2017,05), new Date(2017,06), new Date(2017,07), new Date(2017,08), new Date(2017,09), new Date(2017,10), new Date(2017,11), new Date(2017,12),
+        new Date(2018,01), new Date(2018,02), new Date(2018,03), new Date(2018,04), new Date(2018,05), new Date(2018,06), new Date(2018,07), new Date(2018,08), new Date(2018,09), new Date(2018,10), new Date(2018,11), new Date(2018,12),
+        new Date(2019,01), new Date(2019,02), new Date(2019,03), new Date(2019,04), new Date(2019,05), new Date(2019,06), new Date(2019,07), new Date(2019,08), new Date(2019,09), new Date(2019,10), new Date(2019,11), new Date(2019,12)  
+        ]
+
+        var observed = JSON.parse("{{observed0}}");
+        var trend = JSON.parse("{{trend0}}");
+        var seasonal = JSON.parse("{{seasonal0}}");
+        var resid = JSON.parse("{{resid0}}");
+
+        var chart = new CanvasJS.Chart("chartContainer01",
+        {
+            animationEnabled: true,
+            title: {
+              text: "Observed Sequence",
+              fontWeight: 'lighter',
+              fontFamily: 'arial',
+              fontSize: 17
+            },            
+            axisX: {
+                valueFormatString: "YYYY",
+                interval: 1,
+                intervalType: "year",
+                title: '월간 집계',
+                titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '실제 감염 발생 추이 (건수)',
+                titleFontSize: 12
+            },
+            data: [
+            {
+              type: "line",
+              dataPoints: chart_input(xlabels_decomp, observed)
+            }
+            ]
+        });
+        chart.render();
+
+        var chart = new CanvasJS.Chart("chartContainer02",
+        {
+            animationEnabled: true,
+            title: {
+              text: "Trend Decomposition",
+              fontWeight: 'lighter',
+              fontFamily: 'arial',
+              fontSize: 17
+            },            
+            axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월간 경향성',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 경향성 분석 (건수)',
+                titleFontSize: 12
+            },
+            data: [
+            {
+              type: "line",
+              dataPoints: chart_input(xlabels_decomp, trend)
+            }
+            ]
+        });
+        chart.render();
+
+        var chart = new CanvasJS.Chart("chartContainer03",
+        {
+            animationEnabled: true,
+            title: {
+              text: "Seasonal Decomposition",
+              fontWeight: 'lighter',
+              fontFamily: 'arial',
+              fontSize: 17
+            },            
+            axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월별 계절성',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 주기성 분석 (건수)',
+                titleFontSize: 12
+            },
+            data: [
+            {
+              type: "line",
+              dataPoints: chart_input(xlabels_decomp, seasonal)
+            }
+            ]
+        });
+        chart.render();
+        
+        var chart = new CanvasJS.Chart("chartContainer04",
+        {
+            animationEnabled: true,
+            title: {
+              text: "Residual Sequence",
+              fontWeight: 'lighter',
+              fontFamily: 'arial',
+              fontSize: 17
+            },            
+            axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월간 감염도 변화',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 잔차량 분석 (건수)',
+                titleFontSize: 12
+            },
+            data: [
+            {
+              type: "line",
+              dataPoints: chart_input(xlabels_decomp, resid)
+            }
+            ]
+        });
+        chart.render();        
+      </script>
+      
+      <h3>enterococcus faecium / enterococcus faecalis</h3>
+      <!--   CHART GRAPH -->
+      <p style="text-align:right"> R-squared: {{ r2_score1 }} | Mean Absolute Error: {{ mae_score1 }}</p>
+      <canvas class="my-4" id="chart1" width="600" height="200"></canvas>
+      
+       <h5>&nbsp;&nbsp;&nbsp;Seasonal Decomposition Analysis</h5>
+       <!--  Subplot Charts -->
+       <div id="chartContainer11" style="width: 48%; height: 300px;display: inline-block;"></div> 
+       <div id="chartContainer12" style="width: 48%; height: 300px;display: inline-block;"></div><br/><br/><br/>
+       <div id="chartContainer13" style="width: 48%; height: 300px;display: inline-block;"></div> 
+       <div id="chartContainer14" style="width: 48%; height: 300px;display: inline-block;"></div><br/><br/><br/><br/><br/><br/>
+       <script type="text/javascript"> 
+         var observed = JSON.parse("{{observed1}}");
+         var trend = JSON.parse("{{trend1}}");
+         var seasonal = JSON.parse("{{seasonal1}}");
+         var resid = JSON.parse("{{resid1}}");
+ 
+         var chart = new CanvasJS.Chart("chartContainer11",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Observed Sequence",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+                 valueFormatString: "YYYY",
+                 interval: 1,
+                 intervalType: "year",
+                 title: '월간 집계',
+                 titleFontSize: 12
+             },
+             axisY: {
+                 includeZero: false,
+                 title: '실제 감염 발생 추이 (건수)',
+                 titleFontSize: 12
+             },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, observed)
+             }
+             ]
+         });
+         chart.render();
+ 
+         var chart = new CanvasJS.Chart("chartContainer12",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Trend Decomposition",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월간 경향성',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 경향성 분석 (건수)',
+                titleFontSize: 12
+            },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, trend)
+             }
+             ]
+         });
+         chart.render();
+ 
+         var chart = new CanvasJS.Chart("chartContainer13",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Seasonal Decomposition",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월별 계절성',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 주기성 분석 (건수)',
+                titleFontSize: 12
+            },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, seasonal)
+             }
+             ]
+         });
+         chart.render();
+         
+         var chart = new CanvasJS.Chart("chartContainer14",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Residual Sequence",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월간 감염도 변화',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 잔차량 분석 (건수)',
+                titleFontSize: 12
+            },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, resid)
+             }
+             ]
+         });
+         chart.render();        
+       </script>       
+
+      <h3>acinetobacter baumannii</h3>
+      <!--   CHART GRAPH -->
+      <p style="text-align:right"> R-squared: {{ r2_score2 }} | Mean Absolute Error: {{ mae_score2 }}</p>
+      <canvas class="my-4" id="chart2" width="600" height="200"></canvas>
+
+       <h5>&nbsp;&nbsp;&nbsp;Seasonal Decomposition Analysis</h5>
+       <!--  Subplot Charts -->
+       <div id="chartContainer21" style="width: 48%; height: 300px;display: inline-block;"></div> 
+       <div id="chartContainer22" style="width: 48%; height: 300px;display: inline-block;"></div><br/><br/><br/>
+       <div id="chartContainer23" style="width: 48%; height: 300px;display: inline-block;"></div> 
+       <div id="chartContainer24" style="width: 48%; height: 300px;display: inline-block;"></div><br/><br/><br/><br/><br/><br/>
+       <script type="text/javascript"> 
+         var observed = JSON.parse("{{observed2}}");
+         var trend = JSON.parse("{{trend2}}");
+         var seasonal = JSON.parse("{{seasonal2}}");
+         var resid = JSON.parse("{{resid2}}");
+ 
+         var chart = new CanvasJS.Chart("chartContainer21",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Observed Sequence",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+                 valueFormatString: "YYYY",
+                 interval: 1,
+                 intervalType: "year",
+                 title: '월간 집계',
+                 titleFontSize: 12
+             },
+             axisY: {
+                 includeZero: false,
+                 title: '실제 감염 발생 추이 (건수)',
+                 titleFontSize: 12
+             },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, observed)
+             }
+             ]
+         });
+         chart.render();
+ 
+         var chart = new CanvasJS.Chart("chartContainer22",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Trend Decomposition",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월간 경향성',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 경향성 분석 (건수)',
+                titleFontSize: 12
+            },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, trend)
+             }
+             ]
+         });
+         chart.render();
+ 
+         var chart = new CanvasJS.Chart("chartContainer23",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Seasonal Decomposition",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월별 계절성',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 주기성 분석 (건수)',
+                titleFontSize: 12
+            },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, seasonal)
+             }
+             ]
+         });
+         chart.render();
+         
+         var chart = new CanvasJS.Chart("chartContainer24",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Residual Sequence",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월간 감염도 변화',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 잔차량 분석 (건수)',
+                titleFontSize: 12
+            },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, resid)
+             }
+             ]
+         });
+         chart.render();        
+       </script>       
+
+
+      <h3>pseudomonas aeruginosa</h3>
+      <!--   CHART GRAPH -->
+      <p style="text-align:right"> R-squared: {{ r2_score3 }} | Mean Absolute Error: {{ mae_score3 }}</p>
+      <canvas class="my-4" id="chart3" width="600" height="200"></canvas>
+       
+       <h5>&nbsp;&nbsp;&nbsp;Seasonal Decomposition Analysis</h5>
+       <!--  Subplot Charts -->
+       <div id="chartContainer31" style="width: 48%; height: 300px;display: inline-block;"></div> 
+       <div id="chartContainer32" style="width: 48%; height: 300px;display: inline-block;"></div><br/><br/><br/>
+       <div id="chartContainer33" style="width: 48%; height: 300px;display: inline-block;"></div> 
+       <div id="chartContainer34" style="width: 48%; height: 300px;display: inline-block;"></div><br/><br/><br/><br/><br/><br/>
+       <script type="text/javascript"> 
+         var observed = JSON.parse("{{observed3}}");
+         var trend = JSON.parse("{{trend3}}");
+         var seasonal = JSON.parse("{{seasonal3}}");
+         var resid = JSON.parse("{{resid3}}");
+ 
+         var chart = new CanvasJS.Chart("chartContainer31",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Observed Sequence",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+                 valueFormatString: "YYYY",
+                 interval: 1,
+                 intervalType: "year",
+                 title: '월간 집계',
+                 titleFontSize: 12
+             },
+             axisY: {
+                 includeZero: false,
+                 title: '실제 감염 발생 추이 (건수)',
+                 titleFontSize: 12
+             },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, observed)
+             }
+             ]
+         });
+         chart.render();
+ 
+         var chart = new CanvasJS.Chart("chartContainer32",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Trend Decomposition",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월간 경향성',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 경향성 분석 (건수)',
+                titleFontSize: 12
+            },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, trend)
+             }
+             ]
+         });
+         chart.render();
+ 
+         var chart = new CanvasJS.Chart("chartContainer33",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Seasonal Decomposition",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월별 계절성',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 주기성 분석 (건수)',
+                titleFontSize: 12
+            },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, seasonal)
+             }
+             ]
+         });
+         chart.render();
+         
+         var chart = new CanvasJS.Chart("chartContainer34",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Residual Sequence",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월간 감염도 변화',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 잔차량 분석 (건수)',
+                titleFontSize: 12
+            },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, resid)
+             }
+             ]
+         });
+         chart.render();        
+       </script>       
+       
+       
+      <h3>escherichia coli</h3>
+      <!--   CHART GRAPH -->
+      <p style="text-align:right"> R-squared: {{ r2_score4 }} | Mean Absolute Error: {{ mae_score4 }}</p>
+      <canvas class="my-4" id="chart4" width="600" height="200"></canvas>
+
+       <h5>&nbsp;&nbsp;&nbsp;Seasonal Decomposition Analysis</h5>
+       <!--  Subplot Charts -->
+       <div id="chartContainer41" style="width: 48%; height: 300px;display: inline-block;"></div> 
+       <div id="chartContainer42" style="width: 48%; height: 300px;display: inline-block;"></div><br/><br/><br/>
+       <div id="chartContainer43" style="width: 48%; height: 300px;display: inline-block;"></div> 
+       <div id="chartContainer44" style="width: 48%; height: 300px;display: inline-block;"></div><br/><br/><br/><br/><br/><br/>
+       <script type="text/javascript"> 
+         var observed = JSON.parse("{{observed4}}");
+         var trend = JSON.parse("{{trend4}}");
+         var seasonal = JSON.parse("{{seasonal4}}");
+         var resid = JSON.parse("{{resid4}}");
+ 
+         var chart = new CanvasJS.Chart("chartContainer41",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Observed Sequence",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+                 valueFormatString: "YYYY",
+                 interval: 1,
+                 intervalType: "year",
+                 title: '월간 집계',
+                 titleFontSize: 12
+             },
+             axisY: {
+                 includeZero: false,
+                 title: '실제 감염 발생 추이 (건수)',
+                 titleFontSize: 12
+             },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, observed)
+             }
+             ]
+         });
+         chart.render();
+ 
+         var chart = new CanvasJS.Chart("chartContainer42",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Trend Decomposition",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월간 경향성',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 경향성 분석 (건수)',
+                titleFontSize: 12
+            },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, trend)
+             }
+             ]
+         });
+         chart.render();
+ 
+         var chart = new CanvasJS.Chart("chartContainer43",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Seasonal Decomposition",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월별 계절성',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 주기성 분석 (건수)',
+                titleFontSize: 12
+            },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, seasonal)
+             }
+             ]
+         });
+         chart.render();
+         
+         var chart = new CanvasJS.Chart("chartContainer44",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Residual Sequence",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월간 감염도 변화',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 잔차량 분석 (건수)',
+                titleFontSize: 12
+            },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, resid)
+             }
+             ]
+         });
+         chart.render();        
+       </script>       
+
+
+      <h3>klebsiella pneumoniae</h3>
+      <!--   CHART GRAPH -->
+      <p style="text-align:right"> R-squared: {{ r2_score5 }} | Mean Absolute Error: {{ mae_score5 }}</p>
+      <canvas class="my-4" id="chart5" width="600" height="200"></canvas>   
+       
+       <h5>&nbsp;&nbsp;&nbsp;Seasonal Decomposition Analysis</h5>
+       <!--  Subplot Charts -->
+       <div id="chartContainer51" style="width: 48%; height: 300px;display: inline-block;"></div> 
+       <div id="chartContainer52" style="width: 48%; height: 300px;display: inline-block;"></div><br/><br/><br/>
+       <div id="chartContainer53" style="width: 48%; height: 300px;display: inline-block;"></div> 
+       <div id="chartContainer54" style="width: 48%; height: 300px;display: inline-block;"></div><br/><br/><br/><br/><br/><br/>
+       <script type="text/javascript"> 
+         var observed = JSON.parse("{{observed5}}");
+         var trend = JSON.parse("{{trend5}}");
+         var seasonal = JSON.parse("{{seasonal5}}");
+         var resid = JSON.parse("{{resid5}}");
+ 
+         var chart = new CanvasJS.Chart("chartContainer51",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Observed Sequence",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+                 valueFormatString: "YYYY",
+                 interval: 1,
+                 intervalType: "year",
+                 title: '월간 집계',
+                 titleFontSize: 12
+             },
+             axisY: {
+                 includeZero: false,
+                 title: '실제 감염 발생 추이 (건수)',
+                 titleFontSize: 12
+             },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, observed)
+             }
+             ]
+         });
+         chart.render();
+ 
+         var chart = new CanvasJS.Chart("chartContainer52",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Trend Decomposition",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월간 경향성',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 경향성 분석 (건수)',
+                titleFontSize: 12
+            },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, trend)
+             }
+             ]
+         });
+         chart.render();
+ 
+         var chart = new CanvasJS.Chart("chartContainer53",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Seasonal Decomposition",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월별 계절성',
+              titleFontSize: 12
+             },
+             axisY: {
+                includeZero: false,
+                title: '감염 발생 주기성 분석 (건수)',
+                titleFontSize: 12
+             },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, seasonal)
+             }
+             ]
+         });
+         chart.render();
+         
+         var chart = new CanvasJS.Chart("chartContainer54",
+         {
+             animationEnabled: true,
+             title: {
+               text: "Residual Sequence",
+               fontWeight: 'lighter',
+               fontFamily: 'arial',
+               fontSize: 17
+             },            
+             axisX: {
+              valueFormatString: "YYYY",
+              interval: 1,
+              intervalType: "year",
+              title: '월간 감염도 변화',
+              titleFontSize: 12
+            },
+            axisY: {
+                includeZero: false,
+                title: '감염 발생 잔차량 분석 (건수)',
+                titleFontSize: 12
+            },
+             data: [
+             {
+               type: "line",
+               dataPoints: chart_input(xlabels_decomp, resid)
+             }
+             ]
+         });
+         chart.render();        
+       </script>       
+       
+
+        </main>
+      </div>
+    </div>
+    <!-- Graphs -->
+    <script type="text/javascript">
+
+      $.ajax({
+           type:'POST',
+  //          url:'get_resistent',
+           dataType:'json',
+           success:function(result){
+             console.log("work?");
+  
+  
+           }
+       });
+       var xlabels = [
+       '2010-01', '2010-02', '2010-03', '2010-04', '2010-05', '2010-06', '2010-07', '2010-08', '2010-09', '2010-10', '2010-11', '2010-12',
+       '2011-01', '2011-02', '2011-03', '2011-04', '2011-05', '2011-06', '2011-07', '2011-08', '2011-09', '2011-10', '2011-11', '2011-12',
+       '2012-01', '2012-02', '2012-03', '2012-04', '2012-05', '2012-06', '2012-07', '2012-08', '2012-09', '2012-10', '2012-11', '2012-12',
+       '2013-01', '2013-02', '2013-03', '2013-04', '2013-05', '2013-06', '2013-07', '2013-08', '2013-09', '2013-10', '2013-11', '2013-12',
+       '2014-01', '2014-02', '2014-03', '2014-04', '2014-05', '2014-06', '2014-07', '2014-08', '2014-09', '2014-10', '2014-11', '2014-12',
+       '2015-01', '2015-02', '2015-03', '2015-04', '2015-05', '2015-06', '2015-07', '2015-08', '2015-09', '2015-10', '2015-11', '2015-12',
+       '2016-01', '2016-02', '2016-03', '2016-04', '2016-05', '2016-06', '2016-07', '2016-08', '2016-09', '2016-10', '2016-11', '2016-12',
+       '2017-01', '2017-02', '2017-03', '2017-04', '2017-05', '2017-06', '2017-07', '2017-08', '2017-09', '2017-10', '2017-11', '2017-12',
+       '2018-01', '2018-02', '2018-03', '2018-04', '2018-05', '2018-06', '2018-07', '2018-08', '2018-09', '2018-10', '2018-11', '2018-12',
+       '2019-01', '2019-02', '2019-03', '2019-04', '2019-05', '2019-06', '2019-07', '2019-08', '2019-09', '2019-10', '2019-11', '2019-12'  
+       ]
+  
+       var canvas0 = document.getElementById('chart0');
+       var canvas1 = document.getElementById('chart1');
+       var canvas2 = document.getElementById('chart2');
+       var canvas3 = document.getElementById('chart3');
+       var canvas4 = document.getElementById('chart4');
+       var canvas5 = document.getElementById('chart5');
+
+       var real_values = JSON.parse("{{real_values0}}");
+       var predicted_values = JSON.parse("{{predicted_values0}}");
+       var predicted_lowerbounds = JSON.parse("{{predicted_lowerbounds0}}");
+       var predicted_upperbounds = JSON.parse("{{predicted_upperbounds0}}");
+
+       new Chart(canvas0, {
+          type: 'line',
+          data: {
+            labels: xlabels, // date
+            datasets: [{
+              label: '실제 감염 위험도',
+              yAxisID: 'A',
+              borderColor: 'rgba(0, 140, 255, 1)',
+              pointBackgroundColor: 'rgba(0, 140, 255, 1)',
+              backgroundColor:  'transparent',
+              tension: 0.1,
+              data: real_values  //count
+            },
+            {
+              label: '모델 예측 감염 위험도',
+              yAxisID: 'A',
+              borderColor: 'rgba(236, 118, 80, 1)',
+              pointBackgroundColor: 'rgba(236, 118, 80, 1)',
+              backgroundColor: 'transparent',
+              tension: 0.1,
+              data: predicted_values
+            }, 
+            {
+              lineDashType: 'dash',
+              label: '모델 예측 하한 95% 오차 범위',
+              yAxisID: 'A',
+              borderColor: 'gray',
+              borderDash: [10,5],
+              pointStyle: 'line',
+              backgroundColor: '#ffffff',
+              data: predicted_lowerbounds
+            }, 
+            {
+              lineDashType: 'dash',
+              label: '모델 예측 상한 95% 오차 범위',
+              yAxisID: 'A',
+              borderColor: 'gray',
+              borderDash: [10,5],
+              pointStyle: 'line',
+              backgroundColor: 'rgba(192, 192, 192, 0.3)',
+              data: predicted_upperbounds
+            },                               
+            ]
+          },
+          options: {
+            scales: {
+              yAxes: [{
+                id: 'A',
+                type: 'linear',
+                position: 'left',
+                minimum: 0,
+                scaleLabel: {
+                  display: true,
+                  labelString: '감염 위험도'
+                },
+              },],
+              xAxes: [
+              {
+                scaleLabel: {
+                  display: true,
+                  labelString: '월별 집계'
+                }
+              }]
+            }
+          }
+          }); //chart0
+
+        var real_values = JSON.parse("{{real_values1}}");
+        var predicted_values = JSON.parse("{{predicted_values1}}");
+        var predicted_lowerbounds = JSON.parse("{{predicted_lowerbounds1}}");
+        var predicted_upperbounds = JSON.parse("{{predicted_upperbounds1}}");
+
+        new Chart(canvas1, {
+            type: 'line',
+            data: {
+              labels: xlabels, // date
+              datasets: [{
+                label: '실제 감염 위험도',
+                yAxisID: 'A',
+                borderColor: 'rgba(0, 140, 255, 1)',
+                pointBackgroundColor: 'rgba(0, 140, 255, 1)',              
+                backgroundColor:  'transparent',
+                tension: 0.1,
+                data: real_values  //count
+              },
+              {
+                label: '모델 예측 감염 위험도',
+                yAxisID: 'A',
+                borderColor: 'rgba(236, 118, 80, 1)',
+                pointBackgroundColor: 'rgba(236, 118, 80, 1)',
+                backgroundColor: 'transparent',
+                tension: 0.1,
+                data: predicted_values
+              }, 
+              {
+                lineDashType: 'dash',
+                label: '모델 예측 하한 95% 오차 범위',
+                yAxisID: 'A',
+                borderColor: 'gray',
+                borderDash: [10,5],
+                pointStyle: 'line',
+                backgroundColor: '#ffffff',
+                data: predicted_lowerbounds
+              }, 
+              {
+                lineDashType: 'dash',
+                label: '모델 예측 상한 95% 오차 범위',
+                yAxisID: 'A',
+                borderColor: 'gray',
+                borderDash: [10,5],
+                pointStyle: 'line',
+                backgroundColor: 'rgba(192, 192, 192, 0.3)',
+                data: predicted_upperbounds
+              },                               
+              ]
+            },
+            options: {
+              scales: {
+                yAxes: [{
+                  id: 'A',
+                  type: 'linear',
+                  position: 'left',
+                  minimum: 0,
+                  scaleLabel: {
+                    display: true,
+                    labelString: '감염 위험도'
+                  },
+                },],
+                xAxes: [
+                {
+                  scaleLabel: {
+                    display: true,
+                    labelString: '월별 집계'
+                  }
+                }]
+              }
+            }
+            }); //chart1
+
+          var real_values = JSON.parse("{{real_values2}}");
+          var predicted_values = JSON.parse("{{predicted_values2}}");
+          var predicted_lowerbounds = JSON.parse("{{predicted_lowerbounds2}}");
+          var predicted_upperbounds = JSON.parse("{{predicted_upperbounds2}}");         
+
+
+          new Chart(canvas2, {
+              type: 'line',
+              data: {
+                labels: xlabels, // date
+                datasets: [{
+                  label: '실제 감염 위험도',
+                  yAxisID: 'A',
+                  borderColor: 'rgba(0, 140, 255, 1)',
+                  pointBackgroundColor: 'rgba(0, 140, 255, 1)',              
+                  backgroundColor:  'transparent',
+                  tension: 0.1,
+                  data: real_values  //count
+                },
+                {
+                  label: '모델 예측 감염 위험도',
+                  yAxisID: 'A',
+                  borderColor: 'rgba(236, 118, 80, 1)',
+                  pointBackgroundColor: 'rgba(236, 118, 80, 1)',
+                  backgroundColor: 'transparent',
+                  tension: 0.1,
+                  data: predicted_values
+                }, 
+                {
+                  lineDashType: 'dash',
+                  label: '모델 예측 하한 95% 오차 범위',
+                  yAxisID: 'A',
+                  borderColor: 'gray',
+                  borderDash: [10,5],
+                  pointStyle: 'line',
+                  backgroundColor: '#ffffff',
+                  data: predicted_lowerbounds
+                }, 
+                {
+                  lineDashType: 'dash',
+                  label: '모델 예측 상한 95% 오차 범위',
+                  yAxisID: 'A',
+                  borderColor: 'gray',
+                  borderDash: [10,5],
+                  pointStyle: 'line',
+                  backgroundColor: 'rgba(192, 192, 192, 0.3)',
+                  data: predicted_upperbounds
+                },                               
+                ]
+              },
+              options: {
+                scales: {
+                  yAxes: [{
+                    id: 'A',
+                    type: 'linear',
+                    position: 'left',
+                    minimum: 0,
+                    scaleLabel: {
+                      display: true,
+                      labelString: '감염 위험도'
+                    },
+                  },],
+                  xAxes: [
+                  {
+                    scaleLabel: {
+                      display: true,
+                      labelString: '월별 집계'
+                    }
+                  }]
+                }
+              }
+              }); //chart2
+
+            var real_values = JSON.parse("{{real_values3}}");
+            var predicted_values = JSON.parse("{{predicted_values3}}");
+            var predicted_lowerbounds = JSON.parse("{{predicted_lowerbounds3}}");
+            var predicted_upperbounds = JSON.parse("{{predicted_upperbounds3}}");
+  
+              new Chart(canvas3, {
+                type: 'line',
+                data: {
+                  labels: xlabels, // date
+                  datasets: [{
+                    label: '실제 감염 위험도',
+                    yAxisID: 'A',
+                    borderColor: 'rgba(0, 140, 255, 1)',
+                    pointBackgroundColor: 'rgba(0, 140, 255, 1)',              
+                    backgroundColor:  'transparent',
+                    tension: 0.1,
+                    data: real_values  //count
+                  },
+                  {
+                    label: '모델 예측 감염 위험도',
+                    yAxisID: 'A',
+                    borderColor: 'rgba(236, 118, 80, 1)',
+                    pointBackgroundColor: 'rgba(236, 118, 80, 1)',
+                    backgroundColor: 'transparent',
+                    tension: 0.1,
+                    data: predicted_values
+                  }, 
+                  {
+                    lineDashType: 'dash',
+                    label: '모델 예측 하한 95% 오차 범위',
+                    yAxisID: 'A',
+                    borderColor: 'gray',
+                    borderDash: [10,5],
+                    pointStyle: 'line',
+                    backgroundColor: '#ffffff',
+                    data: predicted_lowerbounds
+                  }, 
+                  {
+                    lineDashType: 'dash',
+                    label: '모델 예측 상한 95% 오차 범위',
+                    yAxisID: 'A',
+                    borderColor: 'gray',
+                    borderDash: [10,5],
+                    pointStyle: 'line',
+                    backgroundColor: 'rgba(192, 192, 192, 0.3)',
+                    data: predicted_upperbounds
+                  },                               
+                  ]
+                },
+                options: {
+                  scales: {
+                    yAxes: [{
+                      id: 'A',
+                      type: 'linear',
+                      position: 'left',
+                      minimum: 0,
+                      scaleLabel: {
+                        display: true,
+                        labelString: '감염 위험도'
+                      },
+                    },],
+                    xAxes: [
+                    {
+                      scaleLabel: {
+                        display: true,
+                        labelString: '월별 집계'
+                      }
+                    }]
+                  }
+                }
+                }); //chart3
+
+              var real_values = JSON.parse("{{real_values4}}");
+              var predicted_values = JSON.parse("{{predicted_values4}}");
+              var predicted_lowerbounds = JSON.parse("{{predicted_lowerbounds4}}");
+              var predicted_upperbounds = JSON.parse("{{predicted_upperbounds4}}");
+    
+                new Chart(canvas4, {
+                  type: 'line',
+                  data: {
+                    labels: xlabels, // date
+                    datasets: [{
+                      label: '실제 감염 위험도',
+                      yAxisID: 'A',
+                      borderColor: 'rgba(0, 140, 255, 1)',
+                      pointBackgroundColor: 'rgba(0, 140, 255, 1)',              
+                      backgroundColor:  'transparent',
+                      tension: 0.1,
+                      data: real_values  //count
+                    },
+                    {
+                      label: '모델 예측 감염 위험도',
+                      yAxisID: 'A',
+                      borderColor: 'rgba(236, 118, 80, 1)',
+                      pointBackgroundColor: 'rgba(236, 118, 80, 1)',
+                      backgroundColor: 'transparent',
+                      tension: 0.1,
+                      data: predicted_values
+                    }, 
+                    {
+                      lineDashType: 'dash',
+                      label: '모델 예측 하한 95% 오차 범위',
+                      yAxisID: 'A',
+                      borderColor: 'gray',
+                      borderDash: [10,5],
+                      pointStyle: 'line',
+                      backgroundColor: '#ffffff',
+                      data: predicted_lowerbounds
+                    }, 
+                    {
+                      lineDashType: 'dash',
+                      label: '모델 예측 상한 95% 오차 범위',
+                      yAxisID: 'A',
+                      borderColor: 'gray',
+                      borderDash: [10,5],
+                      pointStyle: 'line',
+                      backgroundColor: 'rgba(192, 192, 192, 0.3)',
+                      data: predicted_upperbounds
+                    },                               
+                    ]
+                  },
+                  options: {
+                    scales: {
+                      yAxes: [{
+                        id: 'A',
+                        type: 'linear',
+                        position: 'left',
+                        minimum: 0,
+                        scaleLabel: {
+                          display: true,
+                          labelString: '감염 위험도'
+                        },
+                      },],
+                      xAxes: [
+                      {
+                        scaleLabel: {
+                          display: true,
+                          labelString: '월별 집계'
+                        }
+                      }]
+                    }
+                  }
+                  }); //chart4
+
+                var real_values = JSON.parse("{{real_values5}}");
+                var predicted_values = JSON.parse("{{predicted_values5}}");
+                var predicted_lowerbounds = JSON.parse("{{predicted_lowerbounds5}}");
+                var predicted_upperbounds = JSON.parse("{{predicted_upperbounds5}}");
+      
+                  new Chart(canvas5, {
+                    type: 'line',
+                    data: {
+                      labels: xlabels, // date
+                      datasets: [{
+                        label: '실제 감염 위험도',
+                        yAxisID: 'A',
+                        borderColor: 'rgba(0, 140, 255, 1)',
+                        pointBackgroundColor: 'rgba(0, 140, 255, 1)',              
+                        backgroundColor:  'transparent',
+                        tension: 0.1,
+                        data: real_values  //count
+                      },
+                      {
+                        label: '모델 예측 감염 위험도',
+                        yAxisID: 'A',
+                        borderColor: 'rgba(236, 118, 80, 1)',
+                        pointBackgroundColor: 'rgba(236, 118, 80, 1)',
+                        backgroundColor: 'transparent',
+                        tension: 0.1,
+                        data: predicted_values
+                      }, 
+                      {
+                        lineDashType: 'dash',
+                        label: '모델 예측 하한 95% 오차 범위',
+                        yAxisID: 'A',
+                        borderColor: 'gray',
+                        borderDash: [10,5],
+                        pointStyle: 'line',
+                        backgroundColor: '#ffffff',
+                        data: predicted_lowerbounds
+                      }, 
+                      {
+                        lineDashType: 'dash',
+                        label: '모델 예측 상한 95% 오차 범위',
+                        yAxisID: 'A',
+                        borderColor: 'gray',
+                        borderDash: [10,5],
+                        pointStyle: 'line',
+                        backgroundColor: 'rgba(192, 192, 192, 0.3)',
+                        data: predicted_upperbounds
+                      },                               
+                      ]
+                    },
+                    options: {
+                      scales: {
+                        yAxes: [{
+                          id: 'A',
+                          type: 'linear',
+                          position: 'left',
+                          minimum: 0,
+                          scaleLabel: {
+                            display: true,
+                            labelString: '감염 위험도'
+                          },
+                        },],
+                        xAxes: [
+                        {
+                          scaleLabel: {
+                            display: true,
+                            labelString: '월별 집계'
+                          }
+                        }]
+                      }
+                    }
+                    }); //chart5
+
+
+    </script>
+  </body>
+</html>
